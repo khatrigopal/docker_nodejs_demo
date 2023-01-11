@@ -42,20 +42,24 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}"
+        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
         
     - name: Install Trivy
       run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v${{ env.TRIVY_VERSION }}
         
-    - name: Run Trivy vulnerability scanner in docker mode
-      uses: aquasecurity/trivy-action@master
+    - name: Image Scan
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+        IMAGE_TAG: latest
+      run: |
+       trivy image --severity HIGH,CRITICAL "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+       
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v
       with:
-          image-ref: '$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'trivy-results-docker.sarif'
-          severity: 'CRITICAL'
+        sarif_file: 'trivy-results-docker.sarif'
      
     - name: PUSH Image to Amazon ECR
       env:
@@ -64,4 +68,3 @@ jobs:
         IMAGE_TAG: latest
       run: |
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-    
