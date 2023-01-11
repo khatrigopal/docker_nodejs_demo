@@ -4,9 +4,19 @@ name: Deploy to ECR
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
-  push:
-    branches: [ master ]
+  issues:
+    types:
+      - opened
+  pull_request_target:
+    branches:
+      - master
+    types:
+      - opened
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
 env:
   TRIVY_VERSION: 0.34.0
 permissions:
