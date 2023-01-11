@@ -2,6 +2,7 @@
 
 name: Deploy to ECR
 
+
 # Controls when the workflow will run
 on:
   issues:
@@ -17,13 +18,10 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
+  
 env:
   TRIVY_VERSION: 0.34.0
-permissions:
-  id-token: write
-  contents: read
-  issues: write
-  pull-requests: write
+
 
 jobs:
   
