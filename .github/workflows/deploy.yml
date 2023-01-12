@@ -9,10 +9,6 @@ on:
        branches: [ master ]
   
 
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
   
 env:
   TRIVY_VERSION: 0.34.0
