@@ -15,9 +15,9 @@ env:
 
 jobs:
   
-  build:
+  Build Image and Scan:
     
-    name: Build Image
+    name: Build Image and Scan
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -66,12 +66,41 @@ jobs:
         sarif_file: 'trivy-results-docker.sarif'
      
     - name: PUSH Image to Amazon ECR
-      environment:
-         name: test
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
         IMAGE_TAG: latest
+             
+      run: |
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+		
+  Push Image to ECR:
+    
+    name: Push Image to ECR
+    runs-on: ubuntu-20.04
+    needs: Build Image and Scan
+    environment: 
+	   name: test
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
         
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build and Tag ECR Image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+        IMAGE_TAG: latest
       run: |
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
